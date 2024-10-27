@@ -63,6 +63,7 @@ public class PlayerController : MonoBehaviour
         if (isGrounded && Input.GetButtonDown("Jump"))
         {
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            AudioManager.instance.PlaySFX(AudioManager.instance.jumpSFX);
         }
     }
 
@@ -77,6 +78,7 @@ public class PlayerController : MonoBehaviour
 
         // Reduce la munición al disparar
         ammoCount--;
+        AudioManager.instance.PlaySFX(AudioManager.instance.shootSFX);
     }
 
     // Método para recibir daño
@@ -89,6 +91,7 @@ public class PlayerController : MonoBehaviour
         if (currentHealth <= 0)
         {
             Debug.Log("El jugador ha muerto.");
+            AudioManager.instance.PlaySFX(AudioManager.instance.defeatMusic);
             // Agrega aquí la lógica para lo que sucede cuando el jugador muere
         }
     }
@@ -98,6 +101,7 @@ public class PlayerController : MonoBehaviour
     {
         currentHealth += amount; // Aumenta la salud
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth); // Asegúrate de que la salud no supere el máximo
+        AudioManager.instance.PlaySFX(AudioManager.instance.healItemSFX);
     }
 
     // Método para agregar munición
@@ -106,5 +110,6 @@ public class PlayerController : MonoBehaviour
         ammoCount += amount; // Aumenta la munición
         ammoCount = Mathf.Clamp(ammoCount, 0, maxAmmo); // Limita la munición al máximo
         Debug.Log("Munición añadida: " + amount);
+        AudioManager.instance.PlaySFX(AudioManager.instance.ammoItemSFX);
     }
 }

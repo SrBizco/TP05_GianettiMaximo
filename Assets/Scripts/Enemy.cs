@@ -92,6 +92,7 @@ public class Enemy : MonoBehaviour
         if (currentHealth <= 0)
         {
             // Instanciar el sistema de partículas
+            AudioManager.instance.PlaySFX(AudioManager.instance.enemyDeathSFX);
             Instantiate(particleSystemPrefab, transform.position, Quaternion.identity);
 
             Destroy(gameObject); // Destruye el enemigo
