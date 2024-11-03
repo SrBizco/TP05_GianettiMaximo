@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.UI;
 
 public class AudioManager : MonoBehaviour
 {
@@ -9,8 +10,8 @@ public class AudioManager : MonoBehaviour
     public AudioMixer audioMixer;
 
     [Header("Audio Sources")]
-    public AudioSource musicSource; // Para música de fondo
-    public AudioSource sfxSource; // Para efectos de sonido
+    public AudioSource musicSource;
+    public AudioSource sfxSource;
 
     [Header("Audio Clips")]
     public AudioClip gameplayMusic;
@@ -20,6 +21,9 @@ public class AudioManager : MonoBehaviour
     public AudioClip healItemSFX;
     public AudioClip ammoItemSFX;
     public AudioClip enemyDeathSFX;
+
+    private float currentMusicVolume = 1.0f; // Volumen predeterminado de la música
+    private float currentSFXVolume = 1.0f; // Volumen predeterminado de SFX
 
     private void Awake()
     {
@@ -36,9 +40,10 @@ public class AudioManager : MonoBehaviour
 
     private void Start()
     {
-        // Configura la música para que loopee y comienza a reproducirla
         musicSource.loop = true;
         PlayMusic(gameplayMusic);
+        SetMusicVolume(currentMusicVolume); // Establecer volumen inicial
+        SetSFXVolume(currentSFXVolume); // Establecer volumen inicial
     }
 
     public void PlayMusic(AudioClip clip)
@@ -54,16 +59,24 @@ public class AudioManager : MonoBehaviour
 
     public void SetMusicVolume(float volume)
     {
-        audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20);
+        currentMusicVolume = volume;
+        audioMixer.SetFloat("MusicVolume", Mathf.Log10(Mathf.Clamp(volume, 0.0001f, 1.0f)) * 20);
     }
 
     public void SetSFXVolume(float volume)
     {
-        audioMixer.SetFloat("SFXVolume", Mathf.Log10(volume) * 20);
+        currentSFXVolume = volume;
+        audioMixer.SetFloat("SFXVolume", Mathf.Log10(Mathf.Clamp(volume, 0.0001f, 1.0f)) * 20);
     }
 
-    public void SetUIVolume(float volume)
+    // Funciones para el Slider
+    public void OnMusicVolumeSliderChanged(Slider slider)
     {
-        audioMixer.SetFloat("UIVolume", Mathf.Log10(volume) * 20);
+        SetMusicVolume(slider.value);
+    }
+
+    public void OnSFXVolumeSliderChanged(Slider slider)
+    {
+        SetSFXVolume(slider.value);
     }
 }

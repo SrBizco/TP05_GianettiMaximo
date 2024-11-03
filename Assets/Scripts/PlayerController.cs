@@ -19,6 +19,7 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private bool isGrounded;
     private int facingDirection = 1; // 1 para derecha, -1 para izquierda
+    
 
     private void Start()
     {
@@ -29,13 +30,17 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        Move();
-        Jump();
-
-        // Detecta el disparo
-        if (Input.GetButtonDown("Fire1") && ammoCount > 0)
+        // Llama a la función de pausar el juego
+        if (Time.timeScale > 0)
         {
-            Shoot();
+            Move();
+            Jump();
+
+            // Detecta el disparo
+            if (Input.GetButtonDown("Fire1") && ammoCount > 0)
+            {
+                Shoot();
+            }
         }
     }
 
@@ -111,5 +116,5 @@ public class PlayerController : MonoBehaviour
         ammoCount = Mathf.Clamp(ammoCount, 0, maxAmmo); // Limita la munición al máximo
         Debug.Log("Munición añadida: " + amount);
         AudioManager.instance.PlaySFX(AudioManager.instance.ammoItemSFX);
-    }
+    } 
 }
