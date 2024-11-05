@@ -1,46 +1,62 @@
+using TMPro;
 using UnityEngine;
-
+using UnityEngine.UI;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private float speed = 5f;
     [SerializeField] private float jumpForce = 10f;
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckRadius = 0.2f;
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private GameObject projectilePrefab; // Prefab del proyectil
-    [SerializeField] private Transform firePoint; // Punto de origen del proyectil
+    [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private Transform firePoint;
     [SerializeField] private float projectileSpeed = 10f;
 
-    public float maxHealth = 10f; // Salud máxima del jugador
-    [SerializeField] private float currentHealth; // Salud actual
-    [SerializeField] private int ammoCount; // Contador de munición
+    public float maxHealth = 10f;
+
+    [SerializeField] private float currentHealth;
+    [SerializeField] private int ammoCount;
     [SerializeField] private int maxAmmo;
+    [SerializeField] private TextMeshProUGUI ammoText;
+    [SerializeField] private Slider healthBar;
+    
 
     private Rigidbody2D rb;
+    private Animator animator;
+    private UIManager uiManager;
+
     private bool isGrounded;
-    private int facingDirection = 1; // 1 para derecha, -1 para izquierda
-    
+    private int facingDirection = 1;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        currentHealth = maxHealth; // Inicializa la salud actual
+        animator = GetComponent<Animator>();
+        uiManager = FindObjectOfType<UIManager>();
+        
+        currentHealth = maxHealth;
         ammoCount = maxAmmo;
     }
 
     private void Update()
     {
-        // Llama a la función de pausar el juego
         if (Time.timeScale > 0)
         {
             Move();
             Jump();
 
-            // Detecta el disparo
             if (Input.GetButtonDown("Fire1") && ammoCount > 0)
             {
                 Shoot();
             }
+        }
+
+        UpdateHealthBar();
+       
+        animator.SetFloat("XVelocity", Mathf.Abs(rb.velocity.x));
+        animator.SetFloat("YVelocity", rb.velocity.y);
+        ammoText.text = ammoCount.ToString();
+        
+        if (currentHealth <= 0)
+        {
+            GameOver();
         }
     }
 
@@ -49,7 +65,6 @@ public class PlayerController : MonoBehaviour
         float moveInput = Input.GetAxis("Horizontal");
         rb.velocity = new Vector2(moveInput * speed, rb.velocity.y);
 
-        // Cambia la dirección visual del personaje y ajusta la dirección de movimiento
         if (moveInput > 0)
         {
             facingDirection = 1;
@@ -64,57 +79,92 @@ public class PlayerController : MonoBehaviour
 
     private void Jump()
     {
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         if (isGrounded && Input.GetButtonDown("Jump"))
         {
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             AudioManager.instance.PlaySFX(AudioManager.instance.jumpSFX);
+            animator.SetBool("isJumping", true);
+            isGrounded = false;
         }
     }
 
     private void Shoot()
     {
-        // Instancia el proyectil en el punto de disparo
         GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-
-        // Añade velocidad al proyectil usando la dirección de movimiento
         Rigidbody2D rbProjectile = projectile.GetComponent<Rigidbody2D>();
         rbProjectile.velocity = new Vector2(facingDirection * projectileSpeed, 0);
-
-        // Reduce la munición al disparar
         ammoCount--;
         AudioManager.instance.PlaySFX(AudioManager.instance.shootSFX);
     }
 
-    // Método para recibir daño
-    public void TakeDamage(float damage)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        currentHealth -= damage; // Reduce la salud actual
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth); // Asegúrate de que la salud no sea menor a 0
-
-        // Aquí podrías agregar lógica para manejar la muerte del jugador
-        if (currentHealth <= 0)
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
         {
-            Debug.Log("El jugador ha muerto.");
-            AudioManager.instance.PlaySFX(AudioManager.instance.defeatMusic);
-            // Agrega aquí la lógica para lo que sucede cuando el jugador muere
+            isGrounded = true;
+            animator.SetBool("isJumping", false);
         }
     }
 
-    // Método para recuperar salud
-    public void Heal(float amount)
+    private void OnCollisionExit2D(Collision2D collision)
     {
-        currentHealth += amount; // Aumenta la salud
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth); // Asegúrate de que la salud no supere el máximo
-        AudioManager.instance.PlaySFX(AudioManager.instance.healItemSFX);
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
+        {
+            isGrounded = false;
+        }
     }
 
-    // Método para agregar munición
+    public void TakeDamage(float damage)
+    {
+        currentHealth -= damage;
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+        if (currentHealth <= 0)
+        {
+           
+            AudioManager.instance.PlaySFX(AudioManager.instance.defeatMusic);
+            GameOver();
+        }
+    }
+
+    public void Heal(float amount)
+    {
+        currentHealth += amount;
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        AudioManager.instance.PlaySFX(AudioManager.instance.healItemSFX);
+    }
+    private void UpdateHealthBar()
+    {
+        healthBar.value = currentHealth / maxHealth;
+    }
+
     public void AddAmmo(int amount)
     {
-        ammoCount += amount; // Aumenta la munición
-        ammoCount = Mathf.Clamp(ammoCount, 0, maxAmmo); // Limita la munición al máximo
+        ammoCount += amount;
+        ammoCount = Mathf.Clamp(ammoCount, 0, maxAmmo);
         Debug.Log("Munición añadida: " + amount);
         AudioManager.instance.PlaySFX(AudioManager.instance.ammoItemSFX);
-    } 
+    }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Fall"))
+        {
+            GameOver();
+        }
+        else if (collision.gameObject.layer == LayerMask.NameToLayer("Victory"))
+        {
+            Victory();
+        }
+    }
+
+    private void GameOver()
+    {
+        Time.timeScale = 0;
+        uiManager.ToggleDefeat();
+    }
+    private void Victory()
+    {
+        Time.timeScale = 0;
+        uiManager.ToggleVictory();
+    }
 }

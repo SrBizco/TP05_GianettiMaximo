@@ -1,48 +1,91 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Audio;
-using UnityEditor.SearchService;
 
 public class UIManager : MonoBehaviour
 {
+    private static UIManager instance;
+
     [SerializeField] private AudioMixer audioMixer;
     [SerializeField] private GameObject mainPanel;
     [SerializeField] private GameObject optionsPanel;
     [SerializeField] private GameObject creditsPanel;
-    [SerializeField] private GameObject pauseMenuPanel; // Panel del menú de pausa
+    [SerializeField] private GameObject pauseMenuPanel;
+    [SerializeField] private GameObject victoryPanel;
+    [SerializeField] private GameObject defeatPanel;
 
-    private bool isGamePaused = false; // Estado del juego
+    private bool isGamePaused = false;
 
     private void Awake()
     {
-        // Asegúrate de que el objeto no se destruya al cargar una nueva escena
-        DontDestroyOnLoad(gameObject);
+        if (instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
     }
 
     private void Start()
     {
-        // Asegurarse de que las pantallas de opciones y créditos están desactivadas al inicio
         optionsPanel.SetActive(false);
         creditsPanel.SetActive(false);
-        pauseMenuPanel.SetActive(false); // Asegúrate de que el menú de pausa esté desactivado
+        pauseMenuPanel.SetActive(false);
+        victoryPanel.SetActive(false);
+        defeatPanel.SetActive(false);
+
+        if (SceneManager.GetActiveScene().name == "MainMenu")
+        {
+            mainPanel.SetActive(true);
+        }
+        else
+        {
+            mainPanel.SetActive(false);
+        }
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "MainMenu")
+        {
+            mainPanel.SetActive(true);
+        }
+        else
+        {
+            mainPanel.SetActive(false);
+        }
     }
     private void Update()
     {
-        // Escuchar la tecla Escape en el UIManager para activar el menú de pausa
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             TogglePause();
         }
     }
 
-    // Función para cargar la escena de juego
     public void PlayGame()
     {
         SceneManager.LoadScene("Gameplay");
-        mainPanel.SetActive(false);// Reemplaza "Gameplay" con el nombre de tu escena de juego
+        Time.timeScale = 1;
+        mainPanel.SetActive(false);
+        victoryPanel.SetActive(false);
+        defeatPanel.SetActive(false);
     }
 
-    // Función para abrir el panel de opciones
     public void OpenOptions()
     {
         optionsPanel.SetActive(true);
@@ -50,7 +93,6 @@ public class UIManager : MonoBehaviour
         pauseMenuPanel.SetActive(false);
     }
 
-    // Función para cerrar el panel de opciones
     public void CloseOptions()
     {
         optionsPanel.SetActive(false);
@@ -68,7 +110,6 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // Función para abrir el panel de créditos
     public void OpenCredits()
     {
         creditsPanel.SetActive(true);
@@ -76,33 +117,36 @@ public class UIManager : MonoBehaviour
         pauseMenuPanel.SetActive(false);
     }
 
-    // Función para cerrar el panel de créditos
     public void CloseCredits()
     {
         creditsPanel.SetActive(false);
         mainPanel.SetActive(true);
     }
 
-    // Función para salir del juego
     public void QuitGame()
     {
-        Application.Quit();
-        Debug.Log("El juego se ha cerrado."); // Esto solo se verá en el Editor de Unity
+         #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+    #else
+        Application.Quit(); // Cierra la aplicación en una construcción (build).
+    #endif
+        Debug.Log("El juego se ha cerrado.");
     }
 
-    // Función para ajustar el volumen de la música
     public void SetMusicVolume(float volume)
     {
-        audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20); // Convierte el valor de 0-1 a decibeles
+        audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20);
     }
 
-    // Función para ajustar el volumen de los efectos de sonido
     public void SetSFXVolume(float volume)
     {
-        audioMixer.SetFloat("SFXVolume", Mathf.Log10(volume) * 20); // Convierte el valor de 0-1 a decibeles
+        audioMixer.SetFloat("SFXVolume", Mathf.Log10(volume) * 20);
+    }
+    public void SetUIVolume(float volume)
+    {
+        audioMixer.SetFloat("UIVolume", Mathf.Log10(volume) * 20);
     }
 
-    // Función para pausar el juego
     public void TogglePause()
     {
         if (isGamePaused)
@@ -115,26 +159,31 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // Función para pausar el juego
     private void PauseGame()
     {
-        Time.timeScale = 0; // Detiene el tiempo del juego
-        pauseMenuPanel.SetActive(true); // Muestra el menú de pausa
-        isGamePaused = true; // Cambia el estado a pausado
+        Time.timeScale = 0;
+        pauseMenuPanel.SetActive(true);
+        isGamePaused = true;
     }
 
-    // Función para reanudar el juego
     public void ResumeGame()
     {
-        Time.timeScale = 1; // Restaura el tiempo del juego
-        pauseMenuPanel.SetActive(false); // Oculta el menú de pausa
-        isGamePaused = false; // Cambia el estado a no pausado
+        Time.timeScale = 1;
+        pauseMenuPanel.SetActive(false);
+        isGamePaused = false;
     }
 
-    // Función para volver al menú principal
     public void BackToMainMenu()
     {
-        ResumeGame(); // Asegúrate de reanudar el juego antes de cargar la escena
-        SceneManager.LoadScene("MainMenu"); // Cambia "MainMenu" al nombre correcto de tu escena
+        ResumeGame();
+        SceneManager.LoadScene("MainMenu");
+    }
+    public void ToggleVictory()
+    {
+        victoryPanel.SetActive(true);
+    }
+    public void ToggleDefeat()
+    {
+        defeatPanel.SetActive(true);
     }
 }

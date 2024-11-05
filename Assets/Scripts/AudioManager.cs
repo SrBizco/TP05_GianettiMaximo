@@ -12,6 +12,7 @@ public class AudioManager : MonoBehaviour
     [Header("Audio Sources")]
     public AudioSource musicSource;
     public AudioSource sfxSource;
+    public AudioSource uiSource;
 
     [Header("Audio Clips")]
     public AudioClip gameplayMusic;
@@ -21,9 +22,12 @@ public class AudioManager : MonoBehaviour
     public AudioClip healItemSFX;
     public AudioClip ammoItemSFX;
     public AudioClip enemyDeathSFX;
+    public AudioClip ButtonClickSFX;
+    public AudioClip ButtonHoverSFX;
 
-    private float currentMusicVolume = 1.0f; // Volumen predeterminado de la música
-    private float currentSFXVolume = 1.0f; // Volumen predeterminado de SFX
+    private float currentMusicVolume = 1.0f; 
+    private float currentSFXVolume = 1.0f;
+    private float currentUIVolume = 1.0f;
 
     private void Awake()
     {
@@ -42,8 +46,8 @@ public class AudioManager : MonoBehaviour
     {
         musicSource.loop = true;
         PlayMusic(gameplayMusic);
-        SetMusicVolume(currentMusicVolume); // Establecer volumen inicial
-        SetSFXVolume(currentSFXVolume); // Establecer volumen inicial
+        SetMusicVolume(currentMusicVolume); 
+        SetSFXVolume(currentSFXVolume); 
     }
 
     public void PlayMusic(AudioClip clip)
@@ -55,6 +59,11 @@ public class AudioManager : MonoBehaviour
     public void PlaySFX(AudioClip clip)
     {
         sfxSource.PlayOneShot(clip);
+    }
+    
+    public void PlayUISound(AudioClip clip)
+    {
+        uiSource.PlayOneShot(clip);
     }
 
     public void SetMusicVolume(float volume)
@@ -68,8 +77,12 @@ public class AudioManager : MonoBehaviour
         currentSFXVolume = volume;
         audioMixer.SetFloat("SFXVolume", Mathf.Log10(Mathf.Clamp(volume, 0.0001f, 1.0f)) * 20);
     }
+    public void SetUIVolume(float volume)
+    {
+        currentUIVolume = volume;
+        audioMixer.SetFloat("UIVolume", Mathf.Log10(Mathf.Clamp(volume, 0.0001f, 1.0f)) * 20);
+    }
 
-    // Funciones para el Slider
     public void OnMusicVolumeSliderChanged(Slider slider)
     {
         SetMusicVolume(slider.value);
@@ -78,5 +91,10 @@ public class AudioManager : MonoBehaviour
     public void OnSFXVolumeSliderChanged(Slider slider)
     {
         SetSFXVolume(slider.value);
+    }
+    
+    public void OnUIVolumeSliderChanged(Slider slider)
+    {
+        SetUIVolume(slider.value);
     }
 }
